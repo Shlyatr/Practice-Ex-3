@@ -62,6 +62,32 @@ def register():
 
     return render_template("register.html")'''
 
+def proverka(func):
+    def wrappers(*args, **kwargs):
+        auth_header = request.headers.get("Authorization")
+
+        if not auth_header or not auth_header.startswith("Basic "):
+            return auth()
+        
+        try:
+            encoded_credentials = auth_header.split(" ")[1]
+            decoded_credentials = base64.b64decode(encoded_credentials).decode("utf-8")
+            login, password = decoded_credentials.split(":", 1)
+        except Exception:
+            return auth()
+        
+        user = Data.query.filter_by(login=login, password=password).first()
+
+        if user:
+            return func(*args, **kwargs)
+        else:
+            return auth()    
+
+    return wrappers
+
+
+
+
 
 def auth():
     return Response(
@@ -69,9 +95,15 @@ def auth():
         {"WWW-Authenticate": 'Basic realm="Login Required"'}
     )
 
+
 @app.route("/Log-in")
+@proverka
 def secret():
-    auth_header = request.headers.get("Authorization")
+    return "<h1>Добро пожаловать!</h1>"
+
+
+
+    '''auth_header = request.headers.get("Authorization")
 
     if not auth_header or not auth_header.startswith("Basic "):
         return auth()
@@ -88,7 +120,8 @@ def secret():
     if user:
         return f"<h1>Добро пожаловать {login}!</h1>"
     else:
-        return auth()
+        return auth()'''
+
 
 if __name__ == '__main__':
     app.run(debug=True)
